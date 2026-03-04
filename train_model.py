@@ -19,10 +19,17 @@ print("Training samples:", len(X_train))
 print("Testing samples:", len(X_test))
 
 # Train model
-model = LogisticRegression(max_iter=1000, class_weight="balanced")
+from sklearn.ensemble import RandomForestClassifier
+
+model = RandomForestClassifier(
+    n_estimators=100,
+    class_weight="balanced",
+    random_state=42,
+    n_jobs=-1
+)
 model.fit(X_train, y_train)
 
-print("Model training completed.")
+print("Random Forest training completed.")
 
 # Predict
 predictions =model.predict(X_test)
@@ -34,6 +41,21 @@ print(classification_report(y_test, predictions))
 print("\nConfusion Matrix:\n")
 print(confusion_matrix(y_test, predictions))
 
+# Feature importance
+feature_importance = pd.DataFrame({
+    "feature": X.columns,
+    "importance": model.feature_importances_
+})
+
+feature_importance = feature_importance.sort_values(
+    by="importance",
+    ascending=False
+)
+
+print("\nFeature Importance:\n")
+print(feature_importance)
+
+# Predict probabilities
 probs = model.predict_proba(X_test)[:,1]
 
 import numpy as np
