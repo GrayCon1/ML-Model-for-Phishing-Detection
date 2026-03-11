@@ -1,4 +1,22 @@
 import pandas as pd
+
+import pandas as pd
+
+# Load the new dataset
+df = pd.read_csv("phishing_email_content.csv")
+
+print("\nFirst 5 rows:\n")
+print(df.head())
+
+print("\nColumn names:\n")
+print(df.columns)
+
+print("\nDataset shape:")
+print(df.shape)
+
+print("\nMissing values:\n")
+print(df.isnull().sum())
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
@@ -19,18 +37,18 @@ print("Training samples:", len(X_train))
 print("Testing samples:", len(X_test))
 
 # Train model
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 
-model = RandomForestClassifier(
-    n_estimators=100,
-    class_weight="balanced",
-    random_state=42,
-    n_jobs=-1
+model =  GradientBoostingClassifier(
+    n_estimators=200,
+    learning_rate=0.1,
+    max_depth=3,
+    random_state=42
 )
+
 model.fit(X_train, y_train)
 
-print("Random Forest training completed.")
-
+print("Gradient Boosting Classifier trained successfully!")
 # Predict
 predictions =model.predict(X_test)
 
