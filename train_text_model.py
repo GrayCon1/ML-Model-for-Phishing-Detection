@@ -1,4 +1,7 @@
 import pandas as pd
+import joblib
+from pathlib import Path
+
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -7,7 +10,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 # Load Dataset
 df = pd.read_csv("phishing_email_content.csv")
 
-# Combine Subject and body
+# Combine Subject and Body
 df["text"] = df["subject"].fillna("") + " " + df["body"].fillna("")
 
 X = df["text"]
@@ -21,7 +24,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 print("Training samples:", len(X_train))
 print("Testing samples:", len(X_test))
 
-# Convert text -> Numerical vectors
+# TF-IDF vectorization
 vectorizer = TfidfVectorizer(
     stop_words="english",
     max_features=10000
@@ -45,3 +48,13 @@ print(classification_report(y_test, predictions))
 
 print("\nConfusion Matrix:\n")
 print(confusion_matrix(y_test, predictions))
+
+# Save model and vectorizer
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = BASE_DIR / "model"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+joblib.dump(model, MODEL_DIR / "phishing_model.pkl")
+joblib.dump(vectorizer, MODEL_DIR / "vectorizer.pkl")
+
+print("\nModel saved successfully!")
