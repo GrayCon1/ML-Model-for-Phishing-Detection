@@ -21,3 +21,6 @@ def load_model() -> Tuple[Any, Any]:
     model = joblib.load(MODEL_PATH)
     vectorizer = joblib.load(VECTORIZER_PATH)
     return model, vectorizer
+
+
+model, vectorizer = load_model()

@@ -36,3 +36,10 @@ def detect_indicators(subject: str, body: str) -> List[str]:
         indicators.append("credential harvesting attempt")
 
     return indicators
+
+
+def get_rule_based_indicators(subject: str, body: str) -> List[str]:
+    """
+    Backward-compatible alias for the rule-based indicator pipeline.
+    """
+    return detect_indicators(subject, body)

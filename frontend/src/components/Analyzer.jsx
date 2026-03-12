@@ -106,6 +106,7 @@ export default function Analyzer() {
   }
 
   const indicators = result?.indicators ?? []
+  const topSignals = result?.top_signals ?? []
 
   return (
     <section className="grid w-full gap-8 lg:grid-cols-[1.15fr_0.85fr]">
@@ -220,6 +221,21 @@ export default function Analyzer() {
                     style={{ width: `${riskPercentage}%` }}
                   />
                 </div>
+                <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                      Classification
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-200">
+                      {result.label}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskTone.pill}`}
+                  >
+                    {riskPercentage >= 50 ? 'Review Immediately' : 'Lower Urgency'}
+                  </span>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
@@ -240,6 +256,30 @@ export default function Analyzer() {
                   <p className="mt-4 text-sm text-slate-400">
                     No specific phishing indicators were detected for this
                     message.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                <h3 className="text-lg font-medium text-white">Top Signals</h3>
+                <p className="mt-2 text-sm text-slate-400">
+                  The strongest model features contributing to this phishing
+                  prediction.
+                </p>
+                {topSignals.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {topSignals.map((signal, index) => (
+                      <span
+                        key={`${signal}-${index}`}
+                        className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-rose-200"
+                      >
+                        {signal}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-slate-400">
+                    No explanatory model signals were returned for this email.
                   </p>
                 )}
               </div>

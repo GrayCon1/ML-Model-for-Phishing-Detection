@@ -6,9 +6,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .indicators import detect_indicators
-from .model_loader import load_model
-from .predictor import predict_email
+from .explainer import explain_prediction
+from .indicators import get_rule_based_indicators
+from .model_loader import load_model, model, vectorizer
+from .predictor import predict_phishing
 
 # Comma-separated list of allowed origins, e.g.
 # ALLOWED_ORIGINS=https://my-app.vercel.app,https://staging.vercel.app
@@ -26,6 +27,7 @@ class AnalyzeResponse(BaseModel):
     phishing_risk: float
     label: str
     indicators: List[str]
+    top_signals: List[str]
 
 
 @asynccontextmanager
@@ -61,16 +63,15 @@ def healthcheck() -> dict[str, str]:
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze_email(payload: AnalyzeRequest) -> AnalyzeResponse:
-    phishing_risk = predict_email(payload.subject, payload.body)
-    indicators = detect_indicators(payload.subject, payload.body)
-
-    if phishing_risk < 0.5:
-        label = "Likely Legitimate"
-    else:
-        label = "Likely Phishing"
+    combined_text = f"{payload.subject} {payload.body}"
+    phishing_risk = predict_phishing(combined_text, model, vectorizer)
+    label = "Likely Phishing" if phishing_risk >= 0.5 else "Likely Legitimate"
+    indicators = get_rule_based_indicators(payload.subject, payload.body)
+    top_signals = explain_prediction(combined_text, model, vectorizer)
 
     return AnalyzeResponse(
         phishing_risk=phishing_risk,
         label=label,
         indicators=indicators,
+        top_signals=top_signals,
     )

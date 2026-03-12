@@ -8,6 +8,15 @@ The FastAPI route layer should call predict_email() directly.
 from .model_loader import load_model
 
 
+def predict_phishing(text: str, model, vectorizer) -> float:
+    """
+    Return the phishing probability for already-combined email text.
+    """
+    vec = vectorizer.transform([text])
+    prob: float = model.predict_proba(vec)[0][1]
+    return round(float(prob), 4)
+
+
 def predict_email(subject: str, body: str) -> float:
     """
     Return the probability that an email is phishing.
@@ -21,8 +30,5 @@ def predict_email(subject: str, body: str) -> float:
         Example: 0.93 indicates high phishing likelihood.
     """
     model, vectorizer = load_model()
-
     text = (subject or "") + " " + (body or "")
-    vec = vectorizer.transform([text])
-    prob: float = model.predict_proba(vec)[0][1]
-    return round(float(prob), 4)
+    return predict_phishing(text, model, vectorizer)
