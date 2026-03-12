@@ -24,6 +24,7 @@ class AnalyzeRequest(BaseModel):
 
 class AnalyzeResponse(BaseModel):
     phishing_risk: float
+    label: str
     indicators: List[str]
 
 
@@ -63,7 +64,13 @@ def analyze_email(payload: AnalyzeRequest) -> AnalyzeResponse:
     phishing_risk = predict_email(payload.subject, payload.body)
     indicators = detect_indicators(payload.subject, payload.body)
 
+    if phishing_risk < 0.5:
+        label = "Likely Legitimate"
+    else:
+        label = "Likely Phishing"
+
     return AnalyzeResponse(
         phishing_risk=phishing_risk,
+        label=label,
         indicators=indicators,
     )
