@@ -88,11 +88,94 @@ function getRiskTone(risk) {
   }
 }
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function buildHighlightedSegments(text, signals, urlItems) {
+  if (!text) return []
+
+  const len = text.length
+  const marks = new Array(len).fill('normal')
+
+  for (const signal of signals) {
+    try {
+      const pattern = new RegExp(escapeRegex(signal), 'gi')
+      let match
+      while ((match = pattern.exec(text)) !== null) {
+        for (let i = match.index; i < match.index + match[0].length; i++) {
+          if (marks[i] === 'normal') marks[i] = 'signal'
+        }
+      }
+    } catch {
+      // skip invalid patterns
+    }
+  }
+
+  for (const urlItem of urlItems) {
+    const idx = text.indexOf(urlItem.url)
+    if (idx !== -1) {
+      const t = urlItem.is_suspicious ? 'url-suspicious' : 'url-clean'
+      for (let i = idx; i < idx + urlItem.url.length; i++) {
+        marks[i] = t
+      }
+    }
+  }
+
+  const segs = []
+  let i = 0
+  while (i < len) {
+    const type = marks[i]
+    let j = i + 1
+    while (j < len && marks[j] === type) j++
+    segs.push({ text: text.slice(i, j), type })
+    i = j
+  }
+  return segs
+}
+
+function HighlightedSegments({ segments }) {
+  return segments.map((seg, idx) => {
+    switch (seg.type) {
+      case 'signal':
+        return (
+          <span
+            key={idx}
+            className="rounded-sm bg-rose-500/30 px-0.5 text-rose-100 outline outline-1 outline-rose-400/50"
+          >
+            {seg.text}
+          </span>
+        )
+      case 'url-suspicious':
+        return (
+          <span
+            key={idx}
+            className="rounded-sm bg-amber-500/25 px-0.5 text-amber-200 outline outline-1 outline-amber-400/40"
+          >
+            {seg.text}
+          </span>
+        )
+      case 'url-clean':
+        return (
+          <span
+            key={idx}
+            className="rounded-sm bg-cyan-500/20 px-0.5 text-cyan-200 outline outline-1 outline-cyan-400/30"
+          >
+            {seg.text}
+          </span>
+        )
+      default:
+        return <span key={idx}>{seg.text}</span>
+    }
+  })
+}
+
 export default function Analyzer() {
   const [formData, setFormData] = useState(initialForm)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isLocked, setIsLocked] = useState(false)
 
   const riskPercentage = useMemo(
     () => normalizeRiskScore(result?.phishing_risk),
@@ -147,6 +230,7 @@ export default function Analyzer() {
       }
 
       setResult(normalizedResult)
+      setIsLocked(true)
     } catch (requestError) {
       setResult(null)
       setError(
@@ -159,9 +243,36 @@ export default function Analyzer() {
     }
   }
 
+  function handleEdit() {
+    setIsLocked(false)
+  }
+
+  function handleClear() {
+    setFormData(initialForm)
+    setResult(null)
+    setError('')
+    setIsLocked(false)
+  }
+
   const indicators = result?.indicators ?? []
   const topSignals = result?.top_signals ?? []
   const urlIntelligence = result?.url_intelligence ?? []
+
+  const subjectSegments = useMemo(
+    () =>
+      result
+        ? buildHighlightedSegments(formData.subject, topSignals, urlIntelligence)
+        : [],
+    [result, formData.subject, topSignals, urlIntelligence],
+  )
+
+  const bodySegments = useMemo(
+    () =>
+      result
+        ? buildHighlightedSegments(formData.body, topSignals, urlIntelligence)
+        : [],
+    [result, formData.body, topSignals, urlIntelligence],
+  )
 
   return (
     <section className="grid w-full gap-8 lg:grid-cols-[1.15fr_0.85fr]">
@@ -186,50 +297,123 @@ export default function Analyzer() {
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <label
-              className="text-sm font-medium text-slate-200"
-              htmlFor="subject"
-            >
-              Email Subject
-            </label>
-            <input
-              id="subject"
-              name="subject"
-              type="text"
-              value={formData.subject}
-              onChange={handleChange}
-              placeholder="Urgent: Verify your account credentials"
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
-            />
+            <div className="flex items-center justify-between">
+              <label
+                className="text-sm font-medium text-slate-200"
+                htmlFor="subject"
+              >
+                Email Subject
+              </label>
+              {isLocked && (
+                <span className="text-xs text-slate-500 tracking-wide">
+                  Locked — click Edit to modify
+                </span>
+              )}
+            </div>
+            {isLocked ? (
+              <div className="w-full min-h-[2.75rem] rounded-2xl border border-slate-600/60 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 leading-relaxed select-text">
+                <HighlightedSegments segments={subjectSegments} />
+              </div>
+            ) : (
+              <input
+                id="subject"
+                name="subject"
+                type="text"
+                value={formData.subject}
+                onChange={handleChange}
+                placeholder="Urgent: Verify your account credentials"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+              />
+            )}
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-200" htmlFor="body">
               Email Body
             </label>
-            <textarea
-              id="body"
-              name="body"
-              rows="10"
-              value={formData.body}
-              onChange={handleChange}
-              placeholder="Paste the full email content here..."
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
-            />
+            {isLocked ? (
+              <pre className="w-full min-h-[15rem] whitespace-pre-wrap break-words rounded-2xl border border-slate-600/60 bg-slate-950/80 px-4 py-3 font-sans text-sm leading-relaxed text-slate-100 select-text">
+                <HighlightedSegments segments={bodySegments} />
+              </pre>
+            ) : (
+              <textarea
+                id="body"
+                name="body"
+                rows="10"
+                value={formData.body}
+                onChange={handleChange}
+                placeholder="Paste the full email content here..."
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+              />
+            )}
           </div>
 
+          {isLocked && topSignals.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-700/60 bg-slate-950/50 px-4 py-3">
+              <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500 shrink-0">
+                Highlighted
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-rose-500/40 outline outline-1 outline-rose-400/50" />
+                Signal words
+              </span>
+              {urlIntelligence.some((u) => u.is_suspicious) && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500/30 outline outline-1 outline-amber-400/40" />
+                  Suspicious URLs
+                </span>
+              )}
+              {urlIntelligence.some((u) => !u.is_suspicious) && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-cyan-500/25 outline outline-1 outline-cyan-400/30" />
+                  Clean URLs
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-700 disabled:text-slate-200"
-            >
-              {isLoading ? 'Analyzing...' : 'Analyze Email'}
-            </button>
-            <p className="text-sm text-slate-400">
-              Results are based on the model score and rule-based phishing
-              signals.
-            </p>
+            {isLocked ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-800 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 hover:border-slate-500"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-700 bg-transparent px-5 py-3 text-sm font-semibold text-slate-400 transition hover:border-slate-500 hover:text-slate-200"
+                >
+                  Clear
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-700 disabled:text-slate-200"
+                >
+                  {isLoading ? 'Analyzing...' : 'Analyze Email'}
+                </button>
+                {result && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-700 bg-transparent px-5 py-3 text-sm font-semibold text-slate-400 transition hover:border-slate-500 hover:text-slate-200"
+                  >
+                    Clear
+                  </button>
+                )}
+                <p className="text-sm text-slate-400">
+                  Results are based on the model score and rule-based phishing
+                  signals.
+                </p>
+              </>
+            )}
           </div>
 
           {error ? (

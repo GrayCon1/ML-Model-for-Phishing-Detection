@@ -44,7 +44,12 @@ A machine-learning system that scores the phishing risk of an email from its sub
 
 ![Low Risk Result](docs/screenshots/result-low-risk.png)
 
+![In-Action]()
+
 > **Adding screenshots:** Run the app locally, take a screenshot of each state, and save them to `docs/screenshots/` using the filenames above.
+
+
+
 
 ---
 
