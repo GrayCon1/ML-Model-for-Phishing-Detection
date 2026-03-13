@@ -26,8 +26,9 @@ html {
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  width: 400px;
+  min-width: 400px;
+  min-height: 500px;
 }
 
 button,
@@ -41,7 +42,7 @@ textarea {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 500px;
 }
 
 ::selection {
