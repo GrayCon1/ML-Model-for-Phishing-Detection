@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+      {
+        "source": "/analyze",
+        "destination": "https://your-backend.onrender.com/analyze"
+      }
+    ]
+  }
