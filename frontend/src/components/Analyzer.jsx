@@ -120,7 +120,7 @@ export default function Analyzer() {
     setError('')
 
     try {
-      const response = await fetch('/analyze', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
