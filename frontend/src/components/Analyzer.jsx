@@ -5,6 +5,50 @@ const initialForm = {
   body: '',
 }
 
+function asSafeText(value) {
+  return typeof value === 'string' ? value : ''
+}
+
+function asSafeStringList(value) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter((item) => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim())
+}
+
+function normalizeUrlIntelligence(value) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter((item) => item && typeof item === 'object')
+    .map((item) => ({
+      url: asSafeText(item.url),
+      is_suspicious: Boolean(item.is_suspicious),
+      flags: asSafeStringList(item.flags),
+    }))
+    .filter((item) => item.url.length > 0)
+}
+
+function normalizeAnalyzeResponse(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  return {
+    phishing_risk:
+      typeof payload.phishing_risk === 'number' ? payload.phishing_risk : 0,
+    label: asSafeText(payload.label),
+    indicators: asSafeStringList(payload.indicators),
+    top_signals: asSafeStringList(payload.top_signals),
+    url_intelligence: normalizeUrlIntelligence(payload.url_intelligence),
+  }
+}
+
 function normalizeRiskScore(score) {
   if (typeof score !== 'number' || Number.isNaN(score)) {
     return 0
@@ -88,11 +132,21 @@ export default function Analyzer() {
       })
 
       if (!response.ok) {
-        throw new Error('The analysis service could not process this email.')
+        throw new Error(
+          response.status >= 500
+            ? 'The analysis service is temporarily unavailable.'
+            : 'The analysis service could not process this email.',
+        )
       }
 
       const data = await response.json()
-      setResult(data)
+      const normalizedResult = normalizeAnalyzeResponse(data)
+
+      if (!normalizedResult) {
+        throw new Error('The analysis service returned an invalid response.')
+      }
+
+      setResult(normalizedResult)
     } catch (requestError) {
       setResult(null)
       setError(
@@ -107,6 +161,7 @@ export default function Analyzer() {
 
   const indicators = result?.indicators ?? []
   const topSignals = result?.top_signals ?? []
+  const urlIntelligence = result?.url_intelligence ?? []
 
   return (
     <section className="grid w-full gap-8 lg:grid-cols-[1.15fr_0.85fr]">
@@ -280,6 +335,64 @@ export default function Analyzer() {
                 ) : (
                   <p className="mt-4 text-sm text-slate-400">
                     No explanatory model signals were returned for this email.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                <h3 className="text-lg font-medium text-white">URL Intelligence</h3>
+                <p className="mt-2 text-sm text-slate-400">
+                  Extracted links are checked for suspicious patterns such as
+                  shorteners, IP-based hosts, extra subdomains, and plain HTTP.
+                </p>
+                {urlIntelligence.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {urlIntelligence.map((item, index) => (
+                      <div
+                        key={`${item.url}-${index}`}
+                        className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-sm"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <span
+                            className="min-w-0 flex-1 truncate font-mono text-sm text-cyan-300"
+                            title={item.url}
+                          >
+                            {item.url}
+                          </span>
+                          <span
+                            className={`inline-flex shrink-0 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] ${
+                              item.is_suspicious
+                                ? 'border-rose-500/20 bg-rose-500/10 text-rose-200'
+                                : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
+                            }`}
+                          >
+                            {item.is_suspicious ? 'Suspicious' : 'Clean'}
+                          </span>
+                        </div>
+
+                        {item.flags.length > 0 ? (
+                          <ul className="mt-3 space-y-2 text-xs text-rose-300">
+                            {item.flags.map((flag, flagIndex) => (
+                              <li
+                                key={`${flag}-${flagIndex}`}
+                                className="flex items-start gap-2"
+                              >
+                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-rose-300" />
+                                <span>{flag}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-3 text-xs text-emerald-300">
+                            No URL risk flags detected.
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-slate-400">
+                    No URLs were extracted from this email.
                   </p>
                 )}
               </div>

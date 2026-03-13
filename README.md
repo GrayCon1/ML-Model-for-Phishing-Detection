@@ -136,8 +136,8 @@ Both platforms can build and run a Docker container directly from your repositor
 4. Set **Environment** to **Docker** — Render will detect the `Dockerfile` automatically.
 5. Add the following environment variable in the Render dashboard:
 
-   | Key | Value |
-   |-----|-------|
+   | Key               | Value                         |
+   | ----------------- | ----------------------------- |
    | `ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
 
 6. Deploy. Render exposes a public URL like `https://phishing-api.onrender.com`.
@@ -149,8 +149,8 @@ Both platforms can build and run a Docker container directly from your repositor
 3. Set **Root Directory** to `backend` in the service settings.
 4. Add the environment variable:
 
-   | Key | Value |
-   |-----|-------|
+   | Key               | Value                         |
+   | ----------------- | ----------------------------- |
    | `ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
 
 5. Railway provides a public URL automatically.
@@ -164,8 +164,8 @@ Both platforms can build and run a Docker container directly from your repositor
 3. Vercel detects the framework (Vite/CRA) automatically.
 4. Add the following environment variable in the Vercel project settings:
 
-   | Key | Value |
-   |-----|-------|
+   | Key            | Value                                                  |
+   | -------------- | ------------------------------------------------------ |
    | `VITE_API_URL` | `https://phishing-api.onrender.com` (your backend URL) |
 
    > If you are using Create React App instead of Vite, the variable must be named `REACT_APP_API_URL`.
@@ -179,28 +179,28 @@ Both platforms can build and run a Docker container directly from your repositor
 
 #### Backend (`backend/.env`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
+| Variable          | Required         | Description                                                               |
+| ----------------- | ---------------- | ------------------------------------------------------------------------- |
 | `ALLOWED_ORIGINS` | Yes (production) | Comma-separated list of frontend origins. Defaults to `*` in development. |
 
 #### Frontend (`frontend/.env`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_API_URL` | Yes | Full URL of the deployed backend, e.g. `https://phishing-api.onrender.com`. |
+| Variable       | Required | Description                                                                 |
+| -------------- | -------- | --------------------------------------------------------------------------- |
+| `VITE_API_URL` | Yes      | Full URL of the deployed backend, e.g. `https://phishing-api.onrender.com`. |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| ML model | scikit-learn (TF-IDF + Logistic Regression) |
-| Backend | FastAPI + Uvicorn |
-| Container | Docker (python:3.11-slim) |
-| Frontend | React (Vite) |
-| Backend hosting | Render or Railway |
-| Frontend hosting | Vercel |
+| Layer            | Technology                                  |
+| ---------------- | ------------------------------------------- |
+| ML model         | scikit-learn (TF-IDF + Logistic Regression) |
+| Backend          | FastAPI + Uvicorn                           |
+| Container        | Docker (python:3.11-slim)                   |
+| Frontend         | React (Vite)                                |
+| Backend hosting  | Render or Railway                           |
+| Frontend hosting | Vercel                                      |
 
 ## Acknowledgements
 

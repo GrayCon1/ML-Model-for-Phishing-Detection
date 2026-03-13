@@ -1,0 +1,68 @@
+name: Security Audit & Bulid Checks
+
+# 1. Run every time its Pushed to main or Pull Request is made to main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # 2. First Check React Frontend
+  frontend-checks:
+    runs-on: ubuntu-latest # Runs fresh Linux server
+    defaults:
+      run:
+        working-directory: ./frontend # Change to frontend directory
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Downloads code to server
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4 # Sets up Node.js environment
+        with:
+          node-version: "20" # Use Node.js version 20
+
+      - name: Install dependencies
+        run: npm install # Installs dependencies from package.json
+
+      - name: Run Security Audit
+        run: npm audit --omit=dev # Runs security audit and fails if high vulnerabilities are found
+
+      - name: Run Linter
+        run: npm run lint # Runs linter to check code quality
+
+      - name: Test Build
+        run: npm run build # Tests if the frontend builds successfully
+
+  # 3. Check the FastAPI Backend
+  backend-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend # Change to backend directory
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # Use Python 3.12
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      #Installs dependencies from requirements.txt
+      - name: Check Python Syntax & Startup
+        env:
+          # We provide dummy hashes so the app doesn't crash during the integrity check
+          PHISHING_MODEL_SHA256: "dummy_hash"
+          VECTORIZER_SHA256: "dummy_hash"
+          ALLOWED_ORIGINS: "http://localhost:3000"
+        run: |
+
+# This compiles the Python files to check for syntax errors python -m compileall app/
