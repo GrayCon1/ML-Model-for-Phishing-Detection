@@ -275,8 +275,8 @@ export default function Analyzer() {
   )
 
   return (
-    <section className="grid w-full gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-      <div className="relative overflow-hidden rounded-3xl border border-cyan-500/20 bg-slate-900/75 p-8 shadow-2xl shadow-cyan-950/40 backdrop-blur xl:p-10">
+    <section className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="relative min-w-0 overflow-hidden rounded-3xl border border-cyan-500/20 bg-slate-900/75 p-8 shadow-2xl shadow-cyan-950/40 backdrop-blur xl:p-10">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" />
 
         <div className="mb-8 space-y-4">
@@ -424,7 +424,7 @@ export default function Analyzer() {
         </form>
       </div>
 
-      <aside className="rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-slate-950/40 backdrop-blur xl:p-10">
+      <aside className="min-w-0 rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-slate-950/40 backdrop-blur xl:p-10">
         <div className="flex h-full flex-col">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
