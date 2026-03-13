@@ -2,7 +2,7 @@
     "rewrites": [
       {
         "source": "/analyze",
-        "destination": "https://ml-model-for-phishing-detection.onrender.com/"
+        "destination": "https://ml-model-for-phishing-detection.onrender.com/analyze"
       }
     ]
   }
