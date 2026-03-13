@@ -1,0 +1,19 @@
+{
+    "manifest_version": 3,
+    "name": "Phishing Detector AI",
+    "version": "1.0.0",
+    "description": "AI-powered phishing detection tool.",
+    "icons": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    },
+    "action": {
+      "default_popup": "index.html",
+      "default_icon": {
+        "16": "icon.png",
+        "48": "icon.png",
+        "128": "icon.png"
+      }
+    }
+  }

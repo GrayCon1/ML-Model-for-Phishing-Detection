@@ -42,7 +42,7 @@ def _parse_allowed_origins() -> List[str]:
 
     for origin in origins:
         parsed = urlparse(origin)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        if parsed.scheme not in {"http", "https","chrome-extension"} or not parsed.netloc:
             raise RuntimeError(f"Invalid CORS origin configured: {origin}")
 
     return origins
