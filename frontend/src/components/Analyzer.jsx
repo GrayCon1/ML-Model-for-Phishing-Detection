@@ -311,7 +311,7 @@ export default function Analyzer() {
               )}
             </div>
             {isLocked ? (
-              <div className="w-full min-h-[2.75rem] rounded-2xl border border-slate-600/60 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 leading-relaxed select-text">
+              <div className="w-full h-[2.75rem] overflow-hidden rounded-2xl border border-slate-600/60 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 leading-relaxed select-text">
                 <HighlightedSegments segments={subjectSegments} />
               </div>
             ) : (
@@ -332,7 +332,7 @@ export default function Analyzer() {
               Email Body
             </label>
             {isLocked ? (
-              <pre className="w-full min-h-[15rem] whitespace-pre-wrap break-words rounded-2xl border border-slate-600/60 bg-slate-950/80 px-4 py-3 font-sans text-sm leading-relaxed text-slate-100 select-text">
+              <pre className="w-full h-60 overflow-y-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-600/60 bg-slate-950/80 px-4 py-3 font-sans text-sm leading-relaxed text-slate-100 select-text">
                 <HighlightedSegments segments={bodySegments} />
               </pre>
             ) : (
