@@ -178,21 +178,24 @@ export default function Analyzer() {
   const [isLocked, setIsLocked] = useState(false)
 
   useEffect(() => {
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const extensionApi = globalThis.chrome
+
+    if (extensionApi?.tabs) {
+      extensionApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0]
-        
-        if (activeTab && activeTab.url && activeTab.url.includes("mail.google.com")) {
-          chrome.tabs.sendMessage(
-            activeTab.id, 
-            { action: "EXTRACT_EMAIL" }, 
+
+        if (activeTab && activeTab.url && activeTab.url.includes('mail.google.com')) {
+          extensionApi.tabs.sendMessage(
+            activeTab.id,
+            { action: 'EXTRACT_EMAIL' },
             (response) => {
-              if (chrome.runtime.lastError) {
-                console.log("Phishing Detector: Content script not ready or tab not refreshed.");
-                return; // Safely exit without crashing
+              if (extensionApi.runtime.lastError) {
+                console.log(
+                  'Phishing Detector: Content script not ready or tab not refreshed.',
+                )
+                return
               }
-              
-              // 2. If we get a safe response, auto-fill the form!
+
               if (response) {
                 setFormData((current) => ({
                   ...current,
@@ -284,9 +287,9 @@ export default function Analyzer() {
     setIsLocked(false)
   }
 
-  const indicators = result?.indicators ?? []
-  const topSignals = result?.top_signals ?? []
-  const urlIntelligence = result?.url_intelligence ?? []
+  const indicators = useMemo(() => result?.indicators ?? [], [result])
+  const topSignals = useMemo(() => result?.top_signals ?? [], [result])
+  const urlIntelligence = useMemo(() => result?.url_intelligence ?? [], [result])
 
   const subjectSegments = useMemo(
     () =>
