@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 
 const initialForm = {
   subject: '',
@@ -176,6 +176,36 @@ export default function Analyzer() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
+
+  useEffect(() => {
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const activeTab = tabs[0]
+        
+        if (activeTab && activeTab.url && activeTab.url.includes("mail.google.com")) {
+          chrome.tabs.sendMessage(
+            activeTab.id, 
+            { action: "EXTRACT_EMAIL" }, 
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.log("Phishing Detector: Content script not ready or tab not refreshed.");
+                return; // Safely exit without crashing
+              }
+              
+              // 2. If we get a safe response, auto-fill the form!
+              if (response) {
+                setFormData((current) => ({
+                  ...current,
+                  subject: response.subject || current.subject,
+                  body: response.body || current.body,
+                }))
+              }
+            }
+          )
+        }
+      })
+    }
+  }, [])
 
   const riskPercentage = useMemo(
     () => normalizeRiskScore(result?.phishing_risk),

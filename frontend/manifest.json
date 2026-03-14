@@ -1,22 +1,27 @@
 {
-    "manifest_version": 3,
-    "name": "Phishing Detector AI",
-    "version": "1.0.0",
-    "description": "AI-powered phishing detection tool.",
-    "host_permissions": [
-      "https://ml-model-for-phishing-detection.onrender.com/*"
-    ],
-    "icons": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
-    },
-    "action": {
-      "default_popup": "index.html",
-      "default_icon": {
-        "16": "icon.png",
-        "48": "icon.png",
-        "128": "icon.png"
-      }
+  "manifest_version": 3,
+  "name": "Phishing Detector AI",
+  "version": "1.0.0",
+  "description": "AI-powered phishing detection tool.",
+  "permissions": [
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://ml-model-for-phishing-detection.onrender.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["src/content.js"]
     }
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_popup": "index.html"
   }
+}
