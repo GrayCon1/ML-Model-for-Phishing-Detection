@@ -184,32 +184,45 @@ export default function Analyzer() {
       extensionApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0]
 
-        if (activeTab && activeTab.url && activeTab.url.includes('mail.google.com')) {
-          extensionApi.tabs.sendMessage(
-            activeTab.id,
-            { action: 'EXTRACT_EMAIL' },
-            (response) => {
-              if (extensionApi.runtime.lastError) {
-                console.log(
-                  'Phishing Detector: Content script not ready or tab not refreshed.',
-                )
-                return
-              }
+        if (activeTab && activeTab.url) {
+          // 1. Define our supported email providers
+          const supportedDomains = [
+            'mail.google.com', 
+            'outlook.live.com', 
+            'outlook.office.com', 
+            'mail.yahoo.com'
+          ]
+          
+          // 2. Check if the current URL matches any of them
+          const isSupported = supportedDomains.some(domain => activeTab.url.includes(domain))
 
-              if (response) {
-                setFormData((current) => ({
-                  ...current,
-                  subject: response.subject || current.subject,
-                  body: response.body || current.body,
-                }))
+          if (isSupported) {
+            extensionApi.tabs.sendMessage(
+              activeTab.id,
+              { action: 'EXTRACT_EMAIL' },
+              (response) => {
+                if (extensionApi.runtime.lastError) {
+                  console.log(
+                    'Phishing Detector: Content script not ready or tab not refreshed.',
+                  )
+                  return
+                }
+
+                if (response) {
+                  setFormData((current) => ({
+                    ...current,
+                    subject: response.subject || current.subject,
+                    body: response.body || current.body,
+                  }))
+                }
               }
-            }
-          )
+            )
+          }
         }
       })
     }
   }, [])
-
+  
   const riskPercentage = useMemo(
     () => normalizeRiskScore(result?.phishing_risk),
     [result],
