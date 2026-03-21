@@ -177,51 +177,58 @@ export default function Analyzer() {
   const [isLoading, setIsLoading] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
 
+  // --- DUAL-MODE EXTRACTION LISTENER ---
   useEffect(() => {
-    const extensionApi = globalThis.chrome
+    // MODE 1: The Inline Iframe Shield Listener
+    const handleMessage = (event) => {
+      if (event.data && event.data.action === "EXTRACTED_DATA") {
+        console.log("React: Received data from Inline Shield!");
+        setFormData((current) => ({
+          ...current,
+          subject: event.data.subject || current.subject,
+          body: event.data.body || current.body,
+        }));
+      }
+    };
+    window.addEventListener("message", handleMessage);
 
+    // Tell the page we are ready (This only does something if we are in the iframe)
+    if (window !== window.parent) {
+      window.parent.postMessage({ action: "REACT_IS_READY" }, "*");
+    }
+
+    // MODE 2: The Toolbar Popup Extractor
+    const extensionApi = globalThis.chrome;
     if (extensionApi?.tabs) {
       extensionApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const activeTab = tabs[0]
-
+        const activeTab = tabs[0];
         if (activeTab && activeTab.url) {
-          // 1. Define our supported email providers
-          const supportedDomains = [
-            'mail.google.com', 
-            'outlook.live.com', 
-            'outlook.office.com', 
-            'mail.yahoo.com'
-          ]
-          
-          // 2. Check if the current URL matches any of them
-          const isSupported = supportedDomains.some(domain => activeTab.url.includes(domain))
+          const supportedDomains = ['mail.google.com', 'outlook.live.com', 'outlook.office.com', 'mail.yahoo.com'];
+          const isSupported = supportedDomains.some(domain => activeTab.url.includes(domain));
 
           if (isSupported) {
             extensionApi.tabs.sendMessage(
               activeTab.id,
               { action: 'EXTRACT_EMAIL' },
               (response) => {
-                if (extensionApi.runtime.lastError) {
-                  console.log(
-                    'Phishing Detector: Content script not ready or tab not refreshed.',
-                  )
-                  return
-                }
-
-                if (response) {
+                if (!extensionApi.runtime.lastError && response) {
+                  console.log("React: Received data from Toolbar Popup!");
                   setFormData((current) => ({
                     ...current,
                     subject: response.subject || current.subject,
                     body: response.body || current.body,
-                  }))
+                  }));
                 }
               }
-            )
+            );
           }
         }
-      })
+      });
     }
-  }, [])
+
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+  // --------------------------------------
   
   const riskPercentage = useMemo(
     () => normalizeRiskScore(result?.phishing_risk),

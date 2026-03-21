@@ -10,6 +10,12 @@
   "host_permissions": [
     "https://ml-model-for-phishing-detection.onrender.com/*"
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["index.html", "assets/*"],
+      "matches": ["https://mail.google.com/*", "https://outlook.live.com/*", "https://outlook.office.com/*", "https://mail.yahoo.com/*"]
+    }
+  ],
   "content_scripts": [
     {
      "matches": [
@@ -27,6 +33,7 @@
     "128": "icon.png"
   },
   "action": {
+    "default_title": "Phishing Detector",
     "default_popup": "index.html"
   }
 }
