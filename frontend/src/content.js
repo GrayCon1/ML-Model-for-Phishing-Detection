@@ -1,3 +1,5 @@
+/* global chrome */
+
 console.log("Phishing Detector: Content script is alive and ready!");
 
 const GMAIL_SUBJECT_SELECTOR = "h2.hP";
