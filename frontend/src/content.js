@@ -5,7 +5,6 @@ console.log("Phishing Detector: Content script is alive and ready!");
 const GMAIL_SUBJECT_SELECTOR = "h2.hP";
 
 // --- THE UNIVERSAL SCRAPER HELPER ---
-// --- THE UNIVERSAL SCRAPER HELPER ---
 function scrapeEmailData() {
   const subjectEl = document.querySelector(GMAIL_SUBJECT_SELECTOR);
   let subjectText = '';
@@ -21,19 +20,28 @@ function scrapeEmailData() {
   let bodyText = '';
 
   if (bodyElement) {
-    // 1. Temporarily hide our security banner on the LIVE DOM so we don't read it
-    const injectedBanner = bodyElement.querySelector('#native-security-banner');
-    const originalDisplay = injectedBanner ? injectedBanner.style.display : null;
-    if (injectedBanner) injectedBanner.style.display = 'none';
+    // 1. Create a clone so we don't mess up the live email
+    const clone = bodyElement.cloneNode(true);
+    
+    // 2. Remove our own banner from the clone
+    const injectedBanner = clone.querySelector('#native-security-banner');
+    if (injectedBanner) injectedBanner.remove();
 
-    // 2. Grab the text from the live, attached node so CSS line-breaks are preserved!
-    bodyText = bodyElement.innerText.trim();
+    // 3. THE BULLETPROOF FIX: Force physical spaces at line breaks!
+    // Gmail uses <br> and <div> for new lines. We replace them with a space AND a newline.
+    let rawHtml = clone.innerHTML;
+    rawHtml = rawHtml.replace(/<br\s*\/?>/gi, ' \n');
+    rawHtml = rawHtml.replace(/<\/div>/gi, ' \n</div>');
+    rawHtml = rawHtml.replace(/<\/p>/gi, ' \n</p>');
+    
+    // 4. Put the spaced-out HTML back into the clone
+    clone.innerHTML = rawHtml;
+    
+    // 5. Now extract the text (the spaces will prevent squashing)
+    bodyText = clone.textContent.trim();
 
-    // 3. Restore the banner visibility instantly
-    if (injectedBanner) injectedBanner.style.display = originalDisplay;
-
-    // 4. Extract hidden links safely
-    const links = bodyElement.querySelectorAll('a');
+    // 6. Extract hidden links safely
+    const links = clone.querySelectorAll('a');
     const extractedUrls = new Set();
     links.forEach(link => {
       const href = link.getAttribute('href');
@@ -41,7 +49,7 @@ function scrapeEmailData() {
         extractedUrls.add(href);
       }
     });
-
+    
     if (extractedUrls.size > 0) {
       bodyText += '\n\n--- Extracted Hidden Links ---\n' + Array.from(extractedUrls).join('\n');
     }
