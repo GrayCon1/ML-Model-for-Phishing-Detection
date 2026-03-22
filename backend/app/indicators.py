@@ -1,45 +1,30 @@
-"""
-Rule-based phishing indicators returned alongside model predictions.
-"""
-
 import re
 from typing import List
 
-SUSPICIOUS_KEYWORDS = (
-    "urgent",
-    "verify",
-    "account",
-    "password",
-    "login",
-    "confirm",
-    "click",
-    "suspend",
-)
+# This was the missing piece! 
 URL_PATTERN = re.compile(r"https?://\S+", re.IGNORECASE)
 
-
 def detect_indicators(subject: str, body: str) -> List[str]:
-    """
-    Extract simple phishing indicators from the email content.
-    """
     combined_text = f"{subject or ''} {body or ''}".strip()
     text_lower = combined_text.lower()
     indicators: List[str] = []
 
-    if any(keyword in text_lower for keyword in SUSPICIOUS_KEYWORDS):
-        indicators.append("suspicious language detected")
+    # 1. Sense of Urgency
+    urgency_words = ["urgent", "immediately", "action required", "suspended", "expire"]
+    if any(word in text_lower for word in urgency_words):
+        indicators.append("Strong sense of urgency detected")
 
-    if len(URL_PATTERN.findall(combined_text)) > 0:
-        indicators.append("multiple links detected")
+    # 2. Credential Harvesting
+    harvesting_words = ["password", "login", "credentials", "signin", "verify account"]
+    if any(word in text_lower for word in harvesting_words):
+        indicators.append("Potential credential harvesting attempt")
 
-    if "password" in text_lower or "login" in text_lower:
-        indicators.append("credential harvesting attempt")
+    # 3. Link Density
+    links = URL_PATTERN.findall(combined_text)
+    if len(links) > 2:
+        indicators.append(f"High link density ({len(links)} links found)")
 
     return indicators
 
-
 def get_rule_based_indicators(subject: str, body: str) -> List[str]:
-    """
-    Backward-compatible alias for the rule-based indicator pipeline.
-    """
     return detect_indicators(subject, body)

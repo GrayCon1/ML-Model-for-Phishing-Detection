@@ -10,3 +10,4 @@ venv/
 phishing_email.csv
 frontend/node_modules/
 frontend/dist/
+master_training_data.csv

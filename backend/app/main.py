@@ -55,8 +55,7 @@ class AnalyzeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     subject: str = Field(
-        ...,
-        min_length=1,
+        default="",
         max_length=MAX_SUBJECT_LENGTH,
         description="Email subject line",
     )

@@ -1,14 +1,14 @@
 """
 Training pipeline for the phishing email detection model.
 
-Loads phishing_email_content.csv, engineers features via TF-IDF on the
+Loads master_training_data.csv, engineers features via TF-IDF on the
 combined subject+body text, trains a Logistic Regression classifier, and
-saves the model and vectorizer artifacts to backend/model/.
+saves the model, vectorizer, and their SHA256 hashes to backend/model/.
 """
 
 import os
 import pathlib
-
+import hashlib
 import joblib
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -21,7 +21,8 @@ from sklearn.model_selection import train_test_split
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-DATASET_PATH = REPO_ROOT / "phishing_email_content.csv"
+# Pointing to your new highly sanitized dataset
+DATASET_PATH = REPO_ROOT / "master_training_data.csv" 
 MODEL_DIR = REPO_ROOT / "backend" / "model"
 MODEL_PATH = MODEL_DIR / "phishing_model.pkl"
 VECTORIZER_PATH = MODEL_DIR / "vectorizer.pkl"
@@ -30,10 +31,11 @@ VECTORIZER_PATH = MODEL_DIR / "vectorizer.pkl"
 def load_data(path: pathlib.Path) -> pd.DataFrame:
     df = pd.read_csv(path)
 
-    # Fill missing subjects so concatenation is safe
+    # Schema Enforcement: fill missing subjects, body has no missing values
     df["subject"] = df["subject"].fillna("")
     df["body"] = df["body"].fillna("")
 
+    # Harmonize text exactly as the FastAPI backend does
     df["text"] = df["subject"] + " " + df["body"]
     return df
 
@@ -48,10 +50,10 @@ def build_pipeline(df: pd.DataFrame):
 
     vectorizer = TfidfVectorizer(
         max_features=10_000,
-        sublinear_tf=True,      # log-scale TF dampens very frequent terms
+        sublinear_tf=True,      
         strip_accents="unicode",
         analyzer="word",
-        ngram_range=(1, 2),     # unigrams + bigrams improve phishing pattern recall
+        ngram_range=(1, 2),     
         min_df=2,
     )
 
@@ -83,11 +85,28 @@ def evaluate(model, X_test_vec, y_test) -> None:
     print(f"{'Actual Phish':20s} {cm[1][0]:<17} {cm[1][1]}")
 
 
+def _write_sha256(file_path: pathlib.Path) -> None:
+    """Computes and writes the SHA256 hash required by model_loader.py"""
+    digest = hashlib.sha256()
+    with file_path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+            
+    hash_path = file_path.with_name(file_path.name + ".sha256")
+    hash_path.write_text(digest.hexdigest() + "\n", encoding="utf-8")
+    print(f"Hash saved       -> {hash_path}")
+
+
 def save_artifacts(model, vectorizer) -> None:
     os.makedirs(MODEL_DIR, exist_ok=True)
+    
     joblib.dump(model, MODEL_PATH)
+    _write_sha256(MODEL_PATH)
+    
     joblib.dump(vectorizer, VECTORIZER_PATH)
-    print(f"\nModel saved    -> {MODEL_PATH}")
+    _write_sha256(VECTORIZER_PATH)
+    
+    print(f"\nModel saved      -> {MODEL_PATH}")
     print(f"Vectorizer saved -> {VECTORIZER_PATH}")
 
 
