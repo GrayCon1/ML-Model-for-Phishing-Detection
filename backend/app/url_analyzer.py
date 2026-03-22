@@ -5,6 +5,10 @@ from urllib.parse import urlparse
 
 # Common URL shorteners often abused
 SHORTENERS = {"bit.ly", "tinyurl.com", "goo.gl", "ow.ly", "t.co", "is.gd", "cutt.ly"}
+
+# Trusted domains that legitimately use many subdomains (e.g., Google Maps)
+TRUSTED_ROOTS = {"google.com", "goo.gl", "microsoft.com", "windows.net"}
+
 MAX_URLS_PER_TEXT = 25
 MAX_URL_LENGTH = 2048
 
@@ -84,8 +88,12 @@ def analyze_urls(text: str) -> List[Dict[str, Any]]:
             if hostname_lower in SHORTENERS:
                 flags.append("URL shortener")
 
+            # NEW LOGIC: Check for excessive subdomains, but ignore Trusted Roots
             if not is_ip_address and len(hostname.split(".")) > 3:
-                flags.append("Excessive subdomains")
+                # Extracts just the 'google.com' part from a long subdomain
+                root_domain = ".".join(hostname_lower.split(".")[-2:])
+                if root_domain not in TRUSTED_ROOTS:
+                    flags.append("Excessive subdomains")
 
             if not is_bare and parsed.scheme == "http":
                 flags.append("Unencrypted HTTP")

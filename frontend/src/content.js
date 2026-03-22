@@ -5,6 +5,7 @@ console.log("Phishing Detector: Content script is alive and ready!");
 const GMAIL_SUBJECT_SELECTOR = "h2.hP";
 
 // --- THE UNIVERSAL SCRAPER HELPER ---
+// --- THE UNIVERSAL SCRAPER HELPER ---
 function scrapeEmailData() {
   const subjectEl = document.querySelector(GMAIL_SUBJECT_SELECTOR);
   let subjectText = '';
@@ -20,15 +21,19 @@ function scrapeEmailData() {
   let bodyText = '';
 
   if (bodyElement) {
-    // 1. Create a "Phantom Clone" of the body to prevent reading our own banner!
-    const bodyClone = bodyElement.cloneNode(true);
-    const injectedBanner = bodyClone.querySelector('#native-security-banner');
-    if (injectedBanner) injectedBanner.remove();
+    // 1. Temporarily hide our security banner on the LIVE DOM so we don't read it
+    const injectedBanner = bodyElement.querySelector('#native-security-banner');
+    const originalDisplay = injectedBanner ? injectedBanner.style.display : null;
+    if (injectedBanner) injectedBanner.style.display = 'none';
 
-    bodyText = bodyClone.innerText.trim();
+    // 2. Grab the text from the live, attached node so CSS line-breaks are preserved!
+    bodyText = bodyElement.innerText.trim();
 
-    // 2. Extract links from the clean clone
-    const links = bodyClone.querySelectorAll('a');
+    // 3. Restore the banner visibility instantly
+    if (injectedBanner) injectedBanner.style.display = originalDisplay;
+
+    // 4. Extract hidden links safely
+    const links = bodyElement.querySelectorAll('a');
     const extractedUrls = new Set();
     links.forEach(link => {
       const href = link.getAttribute('href');
@@ -36,6 +41,7 @@ function scrapeEmailData() {
         extractedUrls.add(href);
       }
     });
+
     if (extractedUrls.size > 0) {
       bodyText += '\n\n--- Extracted Hidden Links ---\n' + Array.from(extractedUrls).join('\n');
     }
